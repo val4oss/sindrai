@@ -11,7 +11,7 @@ most powerful artifacts, including Thor's hammer. **sindrAI** is a lightweight,
 secure shell utility designed to equip your local AI agents (Claude, Gemini,
 custom agents) with new system-wide skills. 
 
-This project is the perfect companion to [glAIpnir](https://github.com/val4oss/ai-agent-sandbox)
+This project is the perfect companion to [glAIpnir](https://github.com/val4oss/ai-agents-sandbox)
 (securing and enclaving AI agents). While *glAIpnir* binds and secures the AI,
 *sindrAI* provides it with the right tools.
 
@@ -55,9 +55,26 @@ Then install any skill packages you want available on the system:
 sudo zypper install sindrai-skill-pr-review sindrai-skill-python-dev
 ```
 
+### From source
+
+```bash
+./build.sh                          # generate the build/ artefacts
+./build.sh install                  # system wide install
+DESTDIR="${HOME}/.local" PREFIX="/" ./build.sh install # user local install
+```
+
+`./build.sh check` lints the sources with `shellcheck`, `./build.sh test` runs
+the testsuite on the built tool.
+
+A `DESTDIR` tree stays runnable, so a package can be smoke tested before
+it is built: `/tmp/pkg/usr/local/bin/sindrai list` reads the skills staged
+in `/tmp/pkg/usr/local/share/sindrai/skills/`, never the ones of the
+system install.
+
 ## Usage
 
 The `sindrai` CLI is designed to be simple and intuitive for end-users.
+See [docs/usage.md](docs/usage.md) for the complete command reference.
 
 ### List available skills
 
@@ -96,6 +113,23 @@ $ sindrai remove pr-reviewer
 [OK] Skill 'pr-reviewer' removed from your enclave.
 ```
 
+### Options
+
+| Option | Description |
+| ------ | ----------- |
+| `-a`, `--all` | Apply the action to every skill |
+| `-f`, `--force` | Overwrite or remove entries not managed by `sindrai` |
+| `--copy` | Copy the skill tree instead of symlinking it |
+| `--link` | Symlink the skill tree, the default |
+| `--target <dir>` | Agent enclave directory, default `~/.agents` |
+| `--conf <file>` | Configuration file to read |
+| `-q`, `-v`, `-vv` | Quiet, verbose and debug output |
+
+An optional configuration file, read from
+`${XDG_CONFIG_HOME:-~/.config}/sindrai/sindrai.conf`, accepts the
+`AGENTS_D`, `EXTRA_SKILLS_DIRS` and `LINK_MODE` keys. The command line
+always wins over the configuration file.
+
 ## Architecture for Packagers
 
 If you want to package a new skill for sindrAI, follow these simple rules:
@@ -115,3 +149,12 @@ If you want to package a new skill for sindrAI, follow these simple rules:
 to run. It only reads from `/usr/share/sindrai/` and writes to the user's
 own `~/.agents/` directory, ensuring strict compatibility with glAIpnir
 sandboxing.
+
+## Testing
+
+Testsuite is developed into [./test/](./test) and use the [bats](https://github.com/bats-core/bats-core) project.
+
+You would need first to install git submodules using `--recurse-submodules` in
+the `git clone command`, or if already coned: `git pull --recurse-submodules`.
+
+Then run `bats test/` to run the testsuite.

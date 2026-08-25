@@ -1,0 +1,262 @@
+#!/bin/sh
+# builder for the sindrai tool.
+# Copyright (C) 2026  val4oss <val4oss@pm.me>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# ================
+# Global variables
+# ----------------
+
+# Return codes
+SUCCESS=0
+FAILURE=1
+
+PRJ_ID="${PRJ_ID:-sindrai}"
+VERSION="${VERSION:-1.0.0}"
+
+ROOT_D="$(cd "$(dirname "$0")" && pwd)"
+SRC_D="${ROOT_D}/src"
+SRC_FILES="
+${SRC_D}/sindrai.sh
+${SRC_D}/printer.sh
+"
+
+BUILD_D="${ROOT_D}/build"
+
+TEST_D="${ROOT_D}/test"
+TEST_BIN="${TEST_D}/bats/bin/bats"
+
+PREFIX="${PREFIX:-/usr/local}"
+BINDIR="${PREFIX}/bin"
+DATADIR="${PREFIX}/share"
+PKGDATADIR="${DATADIR}/${PRJ_ID}"
+DESTDIR="${DESTDIR:-}"
+
+# =================
+# Private functions
+# -----------------
+
+# ==============
+# Main functions
+# --------------
+
+###
+# Remove the build directory
+# GLOBALS:
+#   read: BUILD_D
+###
+build_clean() {
+    _rc="${SUCCESS}"
+    [ -d "${BUILD_D}" ] && {
+        rm -r "${BUILD_D}" || _rc="${FAILURE}"
+    }
+    return "${_rc}"
+}
+
+###
+# Verify each sources file using shellcheck binary
+# GLOBALS:
+#   read: SRC_FILES
+# OUTPUTS:
+#   errors
+# RETURNS:
+#   SUCCESS, FAILURE
+###
+build_check() {
+    _rc=${SUCCESS}
+    if ! command -v shellcheck > /dev/null 2>&1; then
+        _rc=${FAILURE}
+        echo "Missing shellcheck binary"
+    else
+        for _src_f in ${SRC_FILES}; do
+            if ! shellcheck -x "${_src_f}"; then
+                echo "Shellcheck return somes errors/warning for ${_src_f}"
+                _rc=${FAILURE}
+            fi
+        done
+    fi
+    return "${_rc}"
+}
+
+###
+# Print the usage helper
+# OUTPUTS:
+#   usage
+###
+build_usage() {
+    _usage_str="USAGE: $0 [options]
+options:
+    check:      Use SchellCheck to verify all sources
+    test:       Run testsuite
+    install     Install the artefacts built
+    clean:      Clean build env
+    help:       Print this helper
+info:
+    Build the sindrai project
+    "
+
+    printf "%s\n" "${_usage_str}"
+}
+
+###
+# Main build function
+# OUTPUTS:
+#   progress of the build
+# RETURNS:
+#   SUCCESS, FAILURE if build fails
+###
+build_main() {
+    _rc="${SUCCESS}"
+    while true; do
+
+        build_clean || {
+            echo "build: Failed to clean"
+            _rc="${FAILURE}"; break
+        }
+        build_check || {
+            echo "build: Failed to check"
+            _rc="${FAILURE}"; break
+        }
+        [ -d "${BUILD_D}" ] || mkdir -p "${BUILD_D}" || {
+            echo "build: Failed to create ${BUILD_D} dir"
+            _rc="${FAILURE}"; break
+        }
+
+        mkdir -p "${BUILD_D}/${BINDIR}" "${BUILD_D}/${PKGDATADIR}" || {
+            echo "build: Failed to create staged dirs"
+            _rc="${FAILURE}"; break
+        }
+
+        # Replacing include and store the file with good variables
+        _printer_include="\\. \"\\\${ROOT_D}\\/src\\/printer\\.sh\""
+        sed \
+            -e "/${_printer_include}/r src/printer.sh" \
+            -e "/${_printer_include}/d" \
+            -e "s|^DATA_D_DEFAULT=.*|DATA_D_DEFAULT=\"${BUILD_D}${PKGDATADIR}\"|" \
+            -e "s|^CONF_P=.*|CONF_P=\${XDG_CONFIG_HOME:-\${HOME}/\.config}/${PRJ_ID}/${PRJ_ID}\.conf|" \
+            -e "/^ROOT_D=.*/d" \
+            -e "s|^VERSION=.*|VERSION=\"${VERSION}\"|" \
+            src/sindrai.sh \
+            > "${BUILD_D}${BINDIR}/${PRJ_ID}" || {
+                echo "Failed to build ${BINDIR}/${PRJ_ID}"
+                _rc="${FAILURE}"; break
+            }
+        chmod 755 "${BUILD_D}${BINDIR}/${PRJ_ID}" || {
+            echo "chmdo failed"
+            _rc="${FAILURE}"; break
+        }
+        cp -r skills "${BUILD_D}${PKGDATADIR}/skills"
+
+
+        break
+    done
+
+    return "${_rc}"
+}
+
+###
+# Run testsuite with built project
+# GLOBALS:
+#   read: TEST_BIN TEST_D
+# OUTPUTS:
+#   testsuite output
+# RETURNS:
+#   SUCCESS, FAILURE if test fails
+###
+build_test() {
+    [ -d "${BUILD_D}" ] || {
+        build_main && {
+            echo "Failed to build for testing"
+            return "$FAILURE"
+        }
+    }
+    SINDRAI="${BUILD_D}${BINDIR}/${PRJ_ID}" ${TEST_BIN} "${TEST_D}"
+}
+
+###
+# Install the project
+# GLOBALS:
+#   read: BUILD_D DESTDIR BINDIR PKGDATADIR PRJ_ID
+# OUTPUTS:
+#   status installation output
+# RETURNS:
+#   SUCCESS, FAILURE if installation fails
+###
+build_install() {
+    _rc=${SUCCESS}
+
+    while true; do
+
+        [ -d "${BUILD_D}" ] || {
+            build_main || {
+                echo "Failed to build for install"
+                _rc="$FAILURE"; break
+            }
+        }
+
+        mkdir -p "${DESTDIR}${BINDIR}" "${DESTDIR}${PKGDATADIR}" || {
+            echo "Failed to create needed folders:"
+            echo "- ${DESTDIR}${BINDIR}"
+            echo "- ${DESTDIR}${PKGDATADIR}"
+            _rc="${FAILURE}"; break
+        }
+
+        sed \
+            -e "s|^DATA_D_DEFAULT=.*|DATA_D_DEFAULT=${DESTDIR}${PKGDATADIR}|" \
+            "${BUILD_D}${BINDIR}/${PRJ_ID}" \
+            > "${BUILD_D}${BINDIR}/${PRJ_ID}.install" || {
+                echo "Failed to update ${BINDIR}/${PRJ_ID}.install"
+                _rc="${FAILURE}"; break
+            }
+        
+        install "${BUILD_D}${BINDIR}/${PRJ_ID}.install" \
+            "${DESTDIR}${BINDIR}/${PRJ_ID}" || {
+                echo "Failed to install binary"
+                _rc="${FAILURE}"; break
+            }
+        rm "${BUILD_D}${BINDIR}/${PRJ_ID}.install"
+        install -d -m 755 "${BUILD_D}${PKGDATADIR}/*" \
+            "${DESTDIR}${PKGDATADIR}/" || {
+                echo "Failed to install data dir"
+                _rc="${FAILURE}"; break
+            }
+
+        break
+    done
+
+    return "${_rc}"
+}
+
+# ===========
+# Entry point
+# -----------
+
+_action_rc="${SUCCESS}"
+if [ "$1" != "" ]; then
+    case "$1" in
+        help)    build_usage    || _action_rc="${FAILURE}" ;;
+        check)   build_check    || _action_rc="${FAILURE}" ;;
+        test)    build_test     || _action_rc="${FAILURE}" ;;
+        install) build_install  || _action_rc="${FAILURE}" ;;
+        clean)   build_clean    || _action_rc="${FAILURE}" ;;
+    esac
+    
+    if [ "${_action_rc}" -ne "${SUCCESS}" ]; then
+        echo "Action $1 Failed."
+    fi
+else
+    build_main || _action_rc="${FAILURE}"
+fi
+exit "${_action_rc}"
