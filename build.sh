@@ -246,7 +246,13 @@ build_install() {
                 echo "Built data dir not found"
                 exit 1
             }
-            find . -type f -exec install -Dm 644 "{}" "${DESTDIR}${PKGDATADIR}/{}" \; \
+            find . -type f -exec sh -c '
+                if [ -x "$1" ]; then
+                    install -Dm 755 "$1" "$2/$1"
+                else
+                    install -Dm 644 "$1" "$2/$1"
+                fi
+            ' _ {} "${DESTDIR}${PKGDATADIR}" \;
         ) || {
             echo "Failed to install data dir"
             _rc="${FAILURE}"; break
