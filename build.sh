@@ -214,7 +214,7 @@ build_install() {
         }
 
         sed \
-            -e "s|^DATA_D_DEFAULT=.*|DATA_D_DEFAULT=${DESTDIR}${PKGDATADIR}|" \
+            -e "s|^DATA_D_DEFAULT=.*|DATA_D_DEFAULT=${PKGDATADIR}|" \
             "${BUILD_D}${BINDIR}/${PRJ_ID}" \
             > "${BUILD_D}${BINDIR}/${PRJ_ID}.install" || {
                 echo "Failed to update ${BINDIR}/${PRJ_ID}.install"
