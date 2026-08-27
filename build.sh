@@ -39,6 +39,11 @@ TEST_D="${ROOT_D}/test"
 TEST_BIN="${TEST_D}/bats/bin/bats"
 
 PREFIX="${PREFIX:-/usr/local}"
+case "$PREFIX" in
+    /*) ;;
+    *)  PREFIX="/$PREFIX" ;;
+esac
+
 BINDIR="${PREFIX}/bin"
 DATADIR="${PREFIX}/share"
 PKGDATADIR="${DATADIR}/${PRJ_ID}"
@@ -60,6 +65,7 @@ DESTDIR="${DESTDIR:-}"
 build_clean() {
     _rc="${SUCCESS}"
     [ -d "${BUILD_D}" ] && {
+        echo "Removing ${BUILD_D} ..."
         rm -r "${BUILD_D}" || _rc="${FAILURE}"
     }
     return "${_rc}"
@@ -101,6 +107,7 @@ options:
     check:      Use SchellCheck to verify all sources
     test:       Run testsuite
     install     Install the artefacts built
+    uninstall   Uninstall the project
     clean:      Clean build env
     help:       Print this helper
 info:
@@ -134,12 +141,13 @@ build_main() {
             _rc="${FAILURE}"; break
         }
 
-        mkdir -p "${BUILD_D}/${BINDIR}" "${BUILD_D}/${PKGDATADIR}" || {
+        mkdir -p "${BUILD_D}${BINDIR}" "${BUILD_D}${PKGDATADIR}" || {
             echo "build: Failed to create staged dirs"
             _rc="${FAILURE}"; break
         }
 
         # Replacing include and store the file with good variables
+        echo "Building ${BUILD_D}${BINDIR}/${PRJ_ID}"
         _printer_include="\\. \"\\\${ROOT_D}\\/src\\/printer\\.sh\""
         sed \
             -e "/${_printer_include}/r src/printer.sh" \
@@ -157,8 +165,12 @@ build_main() {
             echo "chmdo failed"
             _rc="${FAILURE}"; break
         }
+        echo "Building skills ${BUILD_D}${PKGDATADIR}/skills"
         cp -r skills "${BUILD_D}${PKGDATADIR}/skills"
-
+        for _skill in "${BUILD_D}${PKGDATADIR}/skills"/*; do
+            _skill_n="$(basename "$_skill")"
+            mv "$_skill" "${BUILD_D}${PKGDATADIR}/skills/${PRJ_ID}-${_skill_n}"
+        done
 
         break
     done
@@ -220,23 +232,64 @@ build_install() {
                 echo "Failed to update ${BINDIR}/${PRJ_ID}.install"
                 _rc="${FAILURE}"; break
             }
-        
+
+        echo "Installing ${DESTDIR}${BINDIR}/${PRJ_ID} ..."
         install "${BUILD_D}${BINDIR}/${PRJ_ID}.install" \
             "${DESTDIR}${BINDIR}/${PRJ_ID}" || {
                 echo "Failed to install binary"
                 _rc="${FAILURE}"; break
             }
         rm "${BUILD_D}${BINDIR}/${PRJ_ID}.install"
-        install -d -m 755 "${BUILD_D}${PKGDATADIR}/*" \
-            "${DESTDIR}${PKGDATADIR}/" || {
-                echo "Failed to install data dir"
-                _rc="${FAILURE}"; break
+        echo "Installing ${DESTDIR}${PKGDATADIR} ..."
+        (
+            cd "${BUILD_D}${PKGDATADIR}" || {
+                echo "Built data dir not found"
+                exit 1
             }
+            find . -type f -exec install -Dm 644 "{}" "${DESTDIR}${PKGDATADIR}/{}" \; \
+        ) || {
+            echo "Failed to install data dir"
+            _rc="${FAILURE}"; break
 
+        }
         break
     done
 
     return "${_rc}"
+}
+
+###
+# Uninstall the project
+# GLOBALS:
+#   read: BUILD_D DESTDIR BINDIR PKGDATADIR PRJ_ID
+# OUTPUTS:
+#   status uninstallation
+# RETURNS:
+#   SUCCESS, FAILURE if uninstallation fails
+###
+build_uninstall() {
+    _rc=${SUCCESS}
+    _bin_f="${DESTDIR}${BINDIR}/${PRJ_ID}"
+    _data_d="${DESTDIR}${PKGDATADIR}"
+
+    while true; do
+        if [ -f "${_bin_f}" ]; then
+            echo "Uninstalling ${_bin_f} ..."
+            rm "${_bin_f}" || {
+                echo "Failed to uninstall ${_bin_f}"
+                _rc="${FAILURE}"; break
+            }
+        fi
+            echo "Uninstalling ${_data_d}/ ..."
+        if [ -d "${_data_d}" ]; then
+            rm -r "${_data_d}" || {
+                echo "Failed to uninstall ${_data_d}"
+                _rc="${FAILURE}"; break
+            }
+        fi
+        break
+    done
+    return "$_rc"
 }
 
 # ===========
@@ -246,11 +299,12 @@ build_install() {
 _action_rc="${SUCCESS}"
 if [ "$1" != "" ]; then
     case "$1" in
-        help)    build_usage    || _action_rc="${FAILURE}" ;;
-        check)   build_check    || _action_rc="${FAILURE}" ;;
-        test)    build_test     || _action_rc="${FAILURE}" ;;
-        install) build_install  || _action_rc="${FAILURE}" ;;
-        clean)   build_clean    || _action_rc="${FAILURE}" ;;
+        help)       build_usage         || _action_rc="${FAILURE}" ;;
+        check)      build_check         || _action_rc="${FAILURE}" ;;
+        test)       build_test          || _action_rc="${FAILURE}" ;;
+        install)    build_install       || _action_rc="${FAILURE}" ;;
+        uninstall)  build_uninstall     || _action_rc="${FAILURE}" ;;
+        clean)      build_clean         || _action_rc="${FAILURE}" ;;
     esac
     
     if [ "${_action_rc}" -ne "${SUCCESS}" ]; then

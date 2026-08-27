@@ -60,16 +60,12 @@ sudo zypper install sindrai-skill-pr-review sindrai-skill-python-dev
 ```bash
 ./build.sh                          # generate the build/ artefacts
 ./build.sh install                  # system wide install
-DESTDIR="${HOME}/.local" PREFIX="/" ./build.sh install # user local install
+PREFIX="${HOME}/.local" ./build.sh  # Build  for local user installation
+DESTDIR="/tmp/pkg" PREFIX="/usr" ./build.sh install # packaging insatllation
 ```
 
 `./build.sh check` lints the sources with `shellcheck`, `./build.sh test` runs
 the testsuite on the built tool.
-
-A `DESTDIR` tree stays runnable, so a package can be smoke tested before
-it is built: `/tmp/pkg/usr/local/bin/sindrai list` reads the skills staged
-in `/tmp/pkg/usr/local/share/sindrai/skills/`, never the ones of the
-system install.
 
 ## Usage
 
