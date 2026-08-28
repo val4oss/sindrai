@@ -310,6 +310,19 @@ printf 'EXTRA_SKILLS_DIRS=/srv/team-skills\n' \
 sindrai list
 ```
 
+Install skill for specific agents
+
+```bash
+# For claude
+sindrai --target ~/.claude install pr-review
+# For Gemini
+sindrai --target ~/.gemini install pr-review
+# For opencode
+sindrai --target ~/.config/opencode install pr-review
+# For copilot
+sindrai --target ~/.copilot install pr-review
+```
+
 Clean the enclave completely, including entries `sindrai` does not own:
 
 ```bash
