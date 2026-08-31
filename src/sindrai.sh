@@ -35,6 +35,10 @@ DATA_D="${DATA_D_DEFAULT}"
 CONF_P="${ROOT_D}/${PRJ_ID}.conf"
 AGENTS_D_DEFAULT="${HOME}/.agents"
 AGENTS_D="${AGENTS_D_DEFAULT}"
+CLAUDE_AGENT_D="${HOME}/.claude"
+GEMINI_AGENT_D="${HOME}/.gemini"
+OPENCODE_AGENT_D="${HOME}/.config/opencode"
+COPILOT_AGENT_D="${HOME}/.copilot"
 SKILLS_D_NAME="skills"
 # Resolved by resolve_paths() once the arguments are parsed.
 USER_SKILLS_D=""
@@ -583,6 +587,10 @@ Options:
   --copy          Copy the skill tree instead of symlinking it
   --link          Symlink the skill tree, the default
   --target <dir>  Agent enclave directory, default '${AGENTS_D_DEFAULT}'
+  --claude        Use Claude agent dir: ${CLAUDE_AGENT_D}
+  --gemini        Use Gemini agent dir: ${GEMINI_AGENT_D}
+  --opencode      Use Opencode agent dir: ${OPENCODE_AGENT_D}
+  --copilot       Use Copilot agent dir: ${COPILOT_AGENT_D}
   --conf <file>   Configuration file to read. See Notes.
 
   Notes:
@@ -766,6 +774,10 @@ while [ $# -gt 0 ]; do
             AGENTS_D="$2"
             shift 2
             ;;
+        --claude)                   AGENTS_D="${CLAUDE_AGENT_D}";   shift 1 ;;
+        --gemini)                   AGENTS_D="${GEMINI_AGENT_D}";   shift 1 ;;
+        --opencode)                 AGENTS_D="${OPENCODE_AGENT_D}"; shift 1 ;;
+        --copilot)                  AGENTS_D="${COPILOT_AGENT_D}";  shift 1 ;;
         --conf)
             if [ -z "$2" ]; then
                 print_error "Error: $1 requires an argument."

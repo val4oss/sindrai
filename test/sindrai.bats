@@ -108,14 +108,10 @@ teardown() {
     run "${SINDRAI}" --conf "${SINDRAI_TEST_CONF}" install "${SINDRAI_TEST_SKILL_NAME}"
     assert_success
     _installed_skill_d="${SINDRAI_TEST_AGENT_D}/skills/${SINDRAI_TEST_SKILL_NAME}"
-    [ -d "${_installed_skill_d}" ] || {
-        echo "FAILED: skill test ${SINDRAI_TEST_SKILL_NAME} not correctly installed" >&3
-        return 1
-    }
-    [ -L "${_installed_skill_d}" ] || {
-        echo "FAILED: skill test ${_installed_skill_d} not a link" >&3
-        return 1
-    }
+    [ -d "${_installed_skill_d}" ]
+    assert_success
+    [ -L "${_installed_skill_d}" ]
+    assert_success
 }
 
 # Test the status
@@ -138,10 +134,8 @@ teardown() {
     }
     run "${SINDRAI}" --conf "${SINDRAI_TEST_CONF}" remove "${SINDRAI_TEST_SKILL_NAME}"
     assert_success
-    [ ! -d "${_installed_skill_d}" ] || {
-        echo "FAILED: skill test ${SINDRAI_TEST_SKILL_NAME} isn't removed" >&3
-        return 1
-    }
+    [ ! -d "${_installed_skill_d}" ]
+    assert_success
 }
 
 # Test the install with copy
@@ -149,13 +143,33 @@ teardown() {
     run "${SINDRAI}" --conf "${SINDRAI_TEST_CONF}" install --copy "${SINDRAI_TEST_SKILL_NAME}"
     assert_success
     _installed_skill_d="${SINDRAI_TEST_AGENT_D}/skills/${SINDRAI_TEST_SKILL_NAME}"
-    [ -d "${_installed_skill_d}" ] || {
-        echo "FAILED: skill test ${SINDRAI_TEST_SKILL_NAME} not correctly installed" >&3
-        return 1
-    }
-    [ ! -L "${_installed_skill_d}" ] || {
-        echo "FAILED: skill test ${_installed_skill_d} is a link" >&3
-        return 1
-    }
+    [ -d "${_installed_skill_d}" ]
+    assert_success
+    [ ! -L "${_installed_skill_d}" ]
+    assert_success
+}
 
+# Test with dedicated agents
+@test "can install for specific agents" {
+    HOME="${SINDRAI_TEST_D}/home"
+    mkdir -p "$HOME/.claude"
+    mkdir -p "$HOME/.gemini"
+    mkdir -p "$HOME/.config/opencode"
+    mkdir -p "$HOME/.copilot"
+
+    _agents="claude gemini opencode copilot"
+    for _agt in $_agents; do
+        run "${SINDRAI}" install --conf "${SINDRAI_TEST_CONF}" \
+            --"$_agt" "${SINDRAI_TEST_SKILL_NAME}"
+        assert_success
+    done
+
+    [ -e "${HOME}/.claude/skills/${SINDRAI_TEST_SKILL_NAME}" ]
+    assert_success
+    [ -e "${HOME}/.gemini/skills/${SINDRAI_TEST_SKILL_NAME}" ]
+    assert_success
+    [ -e "${HOME}/.config/opencode/skills/${SINDRAI_TEST_SKILL_NAME}" ]
+    assert_success
+    [ -e "${HOME}/.copilot/skills/${SINDRAI_TEST_SKILL_NAME}" ]
+    assert_success
 }

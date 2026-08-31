@@ -118,8 +118,15 @@ $ sindrai remove pr-reviewer
 | `--copy` | Copy the skill tree instead of symlinking it |
 | `--link` | Symlink the skill tree, the default |
 | `--target <dir>` | Agent enclave directory, default `~/.agents` |
+| `--<agent>` | Specific agent to manage sindrai skills. See list agents just below |
 | `--conf <file>` | Configuration file to read |
 | `-q`, `-v`, `-vv` | Quiet, verbose and debug output |
+
+`<agent>` can be:
+* `claude`
+* `gemini`
+* `opencode`
+* `copilot`
 
 An optional configuration file, read from
 `${XDG_CONFIG_HOME:-~/.config}/sindrai/sindrai.conf`, accepts the
