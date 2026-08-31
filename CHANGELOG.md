@@ -6,6 +6,7 @@
 
 * Added
 * Changed
+  * `packaging-patches` more generic than `packager-quilt`
 * Fixed
 
 ## [0.2.0] - 2026-08-31
