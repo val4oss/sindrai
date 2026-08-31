@@ -2,7 +2,13 @@
 
 > All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2026-09-DD
+## [X.Y.Z] - 2026-MM-DD
+
+* Added
+* Changed
+* Fixed
+
+## [0.2.0] - 2026-08-31
 
 * Added
   * First skills managed by `sindrai`
