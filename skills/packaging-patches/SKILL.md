@@ -2,6 +2,7 @@
 name: packaging-patches
 description: Manage patches in a packaging source tree with quilt — backport a patch to an older package version, add or refresh a patch, resolve a conflicted patch, and clean up afterwards. Use when working with a .spec file or debian/patches, a patch series, quilt setup/push/refresh errors, or .rej rejects.
 allowed-tools: Bash(quilt *), Bash(cd *), Bash(cp *), Bash(rm *), Bash(find *), Bash(ls *), Bash(grep *), Bash(rpmbuild *), Read, Write, Edit
+version: 0.2.0
 ---
 
 # Patch management in a packaging source tree
