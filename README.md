@@ -158,6 +158,6 @@ sandboxing.
 Testsuite is developed into [./test/](./test) and use the [bats](https://github.com/bats-core/bats-core) project.
 
 You would need first to install git submodules using `--recurse-submodules` in
-the `git clone command`, or if already coned: `git pull --recurse-submodules`.
+the `git clone command`, or if already cloned: `git pull --recurse-submodules`.
 
 Then run `bats test/` to run the testsuite.
