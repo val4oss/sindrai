@@ -218,12 +218,19 @@ build_install() {
             }
         }
 
-        mkdir -p "${DESTDIR}${BINDIR}" "${DESTDIR}${PKGDATADIR}" || {
-            echo "Failed to create needed folders:"
-            echo "- ${DESTDIR}${BINDIR}"
-            echo "- ${DESTDIR}${PKGDATADIR}"
-            _rc="${FAILURE}"; break
-        }
+        for _dir in "${DESTDIR}${BINDIR}" "${DESTDIR}${PKGDATADIR}"; do
+            if [ -e "${_dir}" ]; then
+                if [ ! -d "${_dir}" ]; then
+                    echo "Failed to install: ${_dir} exists and not a directory"
+                    _rc="${FAILURE}"; break 2
+                fi
+            else
+                if ! mkdir -p "${_dir}"; then
+                    echo "Failed to create ${_dir}"
+                    _rc="${FAILURE}"; break 2
+                fi
+            fi
+        done
 
         sed \
             -e "s|^DATA_D_DEFAULT=.*|DATA_D_DEFAULT=${PKGDATADIR}|" \
