@@ -2,7 +2,9 @@
 name: shell-scripting
 description: Expert in Shell scripting with deep knowledge of shell programming and Linux system
 allowed-tools: Read, Grep, Write, Bash(shellcheck *), Bash(grep *), Bash(find *), Bash(cat *), Bash(awk *), Bash(sed *), Bash(sort *), Bash(cut *), Bash(head *), Bash(tail *), Bash(tr *), Bash(printf *), Bash(test *), Bash(readlink *), Bash(realpath *), Bash(dirname *), Bash(basename *), Bash(mkdir *), Bash(cp *), Bash(ls *)
-version: 0.1.0
+metadata:
+  author: val4oss
+  version: 0.1.0
 ---
 
 ## Core Principles

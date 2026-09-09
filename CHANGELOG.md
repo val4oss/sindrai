@@ -6,7 +6,14 @@
 
 * Added
 * Changed
+* Fixed
+
+## [0.2.1] - 2026-09-09
+
+* Added
+* Changed
   * `packaging-patches` more generic than `packager-quilt`
+  * Get the version and author from the metadata header of the skill file
 * Fixed
 
 ## [0.2.0] - 2026-08-31

@@ -5,6 +5,7 @@
 # -----------------
 SINDRAI_TEST_SKILL_NAME="skill-tester"
 SINDRAI_TEST_SKILL_VERSION="1.2.3"
+SINDRAI_TEST_SKILL_AUTHOR="author-tester"
 
 # ==============
 # Bats functions
@@ -136,6 +137,25 @@ teardown() {
     assert_success
     [ ! -d "${_installed_skill_d}" ]
     assert_success
+}
+
+# Test to list skills info
+@test "can list skills info" {
+    if ! _create_good_skill "${SINDRAI_TEST_EXTRA_D}" \
+           "${SINDRAI_TEST_SKILL_NAME}" "${SINDRAI_TEST_SKILL_VERSION}"\
+           "${SINDRAI_TEST_SKILL_AUTHOR}"; then
+        skip "_create_good_skill: Failed to create a skill"
+    fi
+    run "${SINDRAI}" --conf "${SINDRAI_TEST_CONF}" list
+    assert_success
+    assert_output --partial "  - ${SINDRAI_TEST_SKILL_NAME}"
+    assert_output --partial "${SINDRAI_TEST_SKILL_VERSION}) by ${SINDRAI_TEST_SKILL_AUTHOR}"
+    if ! _create_bad_skill "${SINDRAI_TEST_EXTRA_D}" "bad-skill"; then
+        skip "_create_bad_skill: Failed to create a skill"
+    fi
+    run "${SINDRAI}" --conf "${SINDRAI_TEST_CONF}" list
+    assert_success
+    assert_output --partial "  - bad-skill        (vn/a) by unknown"
 }
 
 # Test the install with copy

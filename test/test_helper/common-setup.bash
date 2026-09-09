@@ -25,6 +25,7 @@ _common_setup() {
 #   1 - path : skills dir path
 #   2 - name: Name of the skill
 #   3 - version: Version of the skill (default: 1.0.0)
+#   4 - author: Skill's author (default: val4oss)
 # RETURNS:
 #   0 in success, 1 in failure
 ###
@@ -32,13 +33,42 @@ _create_good_skill() {
     [ -d "$1" ] || return 1
     [ -d "$2" ] && return 1
     version="$3"
+    author="$4"
     [ "$version" = "" ] && version="1.0.0"
+    [ "$author" = "" ] && author="val4oss"
     mkdir -p "$1/$2"
     {
         echo "---"
         echo "name: $2"
-        echo "version: $version"
         echo "description: Nice description of $2"
+        echo "metadata:"
+        echo "  author: $author"
+        echo "  version: $version"
+        echo "---"
+        echo ""
+        echo "Content of the skill"
+    } &> "$1/$2/SKILL.md"
+    return 0
+}
+
+###
+# Create bad skill
+# ARGUMENTS:
+#   1 - path : skills dir path
+#   2 - name: Name of the skill
+# RETURNS:
+#   0 in success, 1 in failure
+###
+_create_bad_skill() {
+    [ -d "$1" ] || return 1
+    [ -d "$2" ] && return 1
+    mkdir -p "$1/$2"
+    {
+        echo "---"
+        echo "name: $2"
+        echo "description: Bad description of $2"
+        echo "version: 6.6.6"
+        echo "author: evil"
         echo "---"
         echo ""
         echo "Content of the skill"

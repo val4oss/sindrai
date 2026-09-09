@@ -140,6 +140,8 @@ _find_skill() {
 
 ###
 # Read one field from the YAML front matter of the metadata file of a skill
+# For complexe info like metadata, the key should be forted as key1_key2_...
+# metadata_version, will seearch for metadata:{... version: ....}
 # ARGUMENTS:
 #   1 - skill_d : directory holding the skill
 #   2 - key     : name of the front matter key to read
@@ -154,26 +156,38 @@ _find_skill() {
 ###
 _skill_field() {
     _sf_rc="$SUCCESS"
-    _sf_value=""
+    _sf_value="$3"
     _sf_meta_p="${1}/${META_F}"
     if [ ! -r "$_sf_meta_p" ]; then
         print_debug "No ${META_F} in ${1}, '${2}' falls back to the default"
     else
-        _sf_value=$(awk -v key="$2" '
-            NR == 1 && $0 !~ /^---[[:space:]]*$/ { exit }
-            NR > 1 && $0 ~ /^---[[:space:]]*$/ { exit }
-            NR > 1 && index($0, key ":") == 1 {
-                value = substr($0, length(key) + 2)
-                sub(/^[[:space:]]+/, "", value)
-                sub(/[[:space:]]+$/, "", value)
-                gsub(/^["'\'']|["'\'']$/, "", value)
-                print value
-                exit
-            }
-        ' "$_sf_meta_p" 2>/dev/null)
+        _sf_content="$(
+            awk '/---/{count++; if(count==1) next; if(count==2) exit} count==1'\
+                "${_sf_meta_p}" 2>/dev/null
+        )"
+        _keys="$(printf "%s" "$2" | tr  '_' ' ')"
+        for _key in $_keys; do
+            _line="$(printf "%s\n" "${_sf_content}" | grep -m 1 "${_key}:")"
+            _val="$(
+                printf "%s\n" "$_line" |\
+                    sed "s/^[[:space:]]*${_key}:[[:space:]]*//"
+            )"
+            if [ -n "$_val" ]; then
+                _sf_value="$_val"
+                break
+            else
+                _sf_content="$(
+                    printf "%s" "$_sf_content" |\
+                        sed -n "/^[[:space:]]*${_key}:/,\$p" | sed '1d'
+                )"
+            fi
+        done
     fi
-    [ -n "$_sf_value" ] || _sf_value="$3"
-    printf '%s\n' "$_sf_value"
+
+    _sf_value="$(
+        printf "%s" "$_sf_value" | sed 's/^"//; s/"$//; s/^'\''//; s/'\''$//' 
+    )"
+    printf "%s" "$_sf_value"
     return "$_sf_rc"
 }
 
@@ -637,11 +651,13 @@ list() {
             _list_names=$(_list_dir_skills "$_list_d") || _list_rc="$FAILURE"
             for _list_name in $_list_names; do
                 _list_ver=$(_skill_field "${_list_d}/${_list_name}" \
-                    "version" "n/a") || _list_rc="$FAILURE"
+                    "metadata_version" "n/a") || _list_rc="$FAILURE"
+                _list_author=$(_skill_field "${_list_d}/${_list_name}" \
+                    "metadata_author" "unknown") || _list_rc="$FAILURE"
                 _list_desc=$(_skill_field "${_list_d}/${_list_name}" \
                     "description" "no description") || _list_rc="$FAILURE"
-                printf "  - %-16s (v%s) - %s\n" "$_list_name" \
-                    "$_list_ver" "$_list_desc"
+                printf "  - %-16s (v%s) by %s\n%0.97s...\n" "$_list_name" \
+                    "$_list_ver" "$_list_author" "$_list_desc"
                 _list_found=$((_list_found + 1))
             done
         fi
