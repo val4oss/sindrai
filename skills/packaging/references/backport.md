@@ -9,7 +9,7 @@ calls a helper this version does not have, or guards a config option introduced
 two releases later. Mechanical success plus semantic nonsense is the normal
 failure mode of a backport, and it compiles often enough to reach a build.
 
-## Read every hunk against the old tree
+## Step 1 - Read every hunk against the old tree
 
 For each hunk in `quilt diff`, take the identifiers it *introduces or relies on*
 and confirm each exists in this version:
@@ -36,7 +36,7 @@ What to check, roughly in order of how often it bites:
 - **Whitespace and formatting churn.** Reformatting hunks carry no fix; drop
   them rather than importing an unrelated style change.
 
-## Decide per hunk
+## Step 2 - Decide per hunk
 
 Each hunk resolves one of four ways. Record which, for the report:
 
@@ -55,7 +55,7 @@ lifetime.
 If you cannot determine whether a hunk is needed, keep it and say so in the
 report. Silently dropping a hunk from a security fix is the worst outcome here.
 
-## Verify the fix actually landed
+## Step 3 - Verify the fix actually landed
 
 After adapting, check the fix is still present rather than merely that the file
 changed. Re-read the original patch's intent — the guard it adds, the value it
@@ -70,7 +70,7 @@ quilt refresh             # after every correction
 An adapted patch that no longer performs the security check is worse than no
 patch: it makes the package look fixed to anyone reading the series.
 
-## Tag the patch with its provenance
+## Step 4 - Tag the patch with its provenance
 
 A backported patch outlives everyone's memory of it. Add a DEP-3 style header at
 the top of the patch file so the next maintainer knows where it came from and
@@ -93,7 +93,7 @@ text above the first `---`/`diff` line. Or use `quilt header -e <patch>`.
 The `Comment:` field is the one that matters: it is the only record of the
 judgement calls, and it is what makes the next rebase possible.
 
-## When it is a security backport
+## Step 5 - When it is a security backport
 
 - Confirm the CVE or advisory ID and put it in the patch header and the metadata
   changelog entry.

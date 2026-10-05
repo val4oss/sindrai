@@ -1,6 +1,16 @@
 # quilt command reference
 
-All of these run from inside the quilt working tree.
+From the root of the source tree of the packaging, where specfile, changelog 
+file and archive are found, run `quilt setup` to create a working tree. Then
+`cd` into it.
+Working tree is mainly called `<pkg-name>-<version>-build/<pkg-name>-<version>`.
+
+If the `quilt setup` fails to run due to a malformated specfile, save the 
+specfile in a new file sufffixed with `.bac`, edit the specfile, mainly it is
+due to some custom RPM macros, just comment them. At the end of the process, you
+can restore the original specfile.
+
+All of the following commands run from inside the quilt working tree.
 
 ## Inspecting the series
 
