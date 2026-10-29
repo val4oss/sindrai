@@ -7,6 +7,7 @@
 * Added
 * Changed
   * Update the packaging-patches skill in global packaging skill.
+  * build: rebuild if context changes from build to install.
 * Fixed
 
 ## [0.2.1] - 2026-09-09
